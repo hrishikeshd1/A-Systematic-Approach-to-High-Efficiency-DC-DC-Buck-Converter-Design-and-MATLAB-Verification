@@ -1,0 +1,2 @@
+# A-Systematic-Approach-to-High-Efficiency-DC-DC-Buck-Converter-Design-and-MATLAB-Verification
+ChatGPT said:  This work presents a systematic design of a high-efficiency DC-DC buck converter for 12V to 5V, 2A conversion. Using precise modeling, a 56 µH inductor and 22 µF capacitor ensure 0.6A current ripple and 50mV voltage ripple at 100kHz. MATLAB/Simulink verification confirms stability and efficiency.
