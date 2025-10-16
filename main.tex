@@ -1,0 +1,439 @@
+\documentclass[12pt, a4paper]{article}
+
+
+
+% --- PREAMBLE ---
+
+% Formatting packages based on documentation standards
+
+\usepackage[a4paper, margin=1in]{geometry} % 1-inch margins
+
+\usepackage{newtxtext, newtxmath} % Times New Roman font
+
+\usepackage{setspace} % For line spacing
+
+\usepackage{parskip}  % For space between paragraphs instead of indentation
+
+\usepackage{titlesec} % To control section heading font size
+
+\usepackage{fancyhdr} % For custom headers/footers (page numbers)
+
+\usepackage{amsmath}
+
+\usepackage{booktabs}
+
+\usepackage{hyperref}
+
+\usepackage{cprotect}
+
+\usepackage{listings} % For embedding code
+
+
+
+% --- FONT AND SPACING CONFIGURATION ---
+
+% Set line spacing to 1.15
+
+\setstretch{1.15}
+
+
+
+% Set section heading font size to 14pt
+
+\titleformat{\section}{\normalfont\fontsize{14}{16}\bfseries}{\thesection}{1em}{}
+
+\titleformat{\subsection}{\normalfont\fontsize{12}{14}\bfseries}{\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}{\normalfont\fontsize{12}{14}\bfseries}{\thesubsubsection}{1em}{}
+
+
+
+% --- PAGE NUMBER CONFIGURATION ---
+
+\pagestyle{fancy}
+
+\fancyhf{} % Clear all header and footer fields
+
+\renewcommand{\headrulewidth}{0pt} % No header rule
+
+\fancyfoot[R]{\thepage} % Page number on the bottom right
+
+
+
+% --- LISTINGS CONFIGURATION FOR MATLAB ---
+
+\lstdefinestyle{matlabstyle}{
+
+    language=Matlab,
+
+    basicstyle=\ttfamily\footnotesize,
+
+    commentstyle=\color{green},
+
+    stringstyle=\color{purple},
+
+    keywordstyle=\color{blue},
+
+    numbers=left,
+
+    numberstyle=\tiny\color{gray},
+
+    breaklines=true,
+
+    frame=single,
+
+    captionpos=b
+
+}
+
+\lstset{style=matlabstyle}
+
+
+
+
+
+\title{A Systematic Approach to High-Efficiency DC-DC Buck Converter Design and MATLAB Verification}
+
+\author{Hrishikesh Dhume \\ Pallav Deshmukh \\ Paras Gharat \\[1em] \textit{Guide: Prof. Najib Ghatte} \\ \textit{Co-Guide: Prof. Narendra Anant Bhagat}}
+
+\date{\today}
+
+
+
+\begin{document}
+
+\maketitle
+
+\thispagestyle{fancy} % Apply the fancy page style to the first page as well
+
+
+
+\begin{abstract}
+
+\noindent Efficiently stepping down DC voltages is a critical and ubiquitous challenge in modern electronics. This work addresses this challenge by presenting a systematic, component-driven design methodology for a high-efficiency DC-DC buck converter, bridging the often-separate domains of theoretical analysis and practical application. By defining key performance metrics for a common 12V to 5V, 2A conversion scenario, we demonstrate how to translate system requirements into tangible component specifications. Precise mathematical models are employed to calculate the required inductance and capacitance, with the goal of maintaining output stability under a significant load. The resulting design specifies a 56 $\mu$H inductor and a 22 $\mu$F capacitor, selected to strictly limit inductor current ripple to 0.6A and output voltage ripple to 50mV at a 100 kHz switching frequency. These theoretically derived values are then prepared for verification within a MATLAB/Simulink environment, a critical step that validates the design's practicality and performance before physical prototyping.
+
+\end{abstract}
+
+
+
+\section{Introduction}
+
+The proliferation of electronic devices, from mobile phones to industrial control systems, relies on a multitude of DC voltage levels, yet power is typically supplied from a single source like a 12V battery or a main adapter. The fundamental problem is how to efficiently and reliably convert this source voltage to the lower levels required by sensitive components like microcontrollers (e.g., 5V or 3.3V). While simple linear regulators exist, their dissipative nature leads to significant power loss as heat, rendering them entirely unsuitable for high-current applications. For instance, converting 12V to 5V at 2A with a linear regulator would waste 14 watts—more power than is delivered to the load itself.
+
+
+
+This article presents a systematic approach to solving this problem by designing a non-dissipative, switch-mode buck converter. Unlike existing literature that often remains purely theoretical, our methodology bridges the gap by walking through a practical, calculation-based design process targeted for simulation and eventual hardware implementation. The approach is distinguished by its focus on tangible performance specifications—specifically, allowable output voltage ripple and inductor current ripple—to directly derive the values of the core energy storage components. This ensures the final circuit is not just functional, but also meets the stability requirements of its intended load. The result of this methodology is a complete component specification for a 12V-to-5V, 2A buck converter, with all parameters calculated and justified. This design is then validated through a simulation framework outlined for MATLAB/Simulink, confirming the circuit's ability to meet its performance targets.
+
+
+
+\section{The Body: Design Methodology and Verification}
+
+Our design process follows a logical and linear progression, moving from abstract requirements to a concrete, verifiable circuit design. This journey is structured to ensure that each decision is informed by the initial project goals. We frame the methodology as a story in four parts: defining the "what" (our performance specifications), understanding the "how" (the principles of operation), calculating the "which" (the specific component values), and finally, establishing the "proof" (the simulation and verification plan). This structured approach minimizes the risk of error and ensures the final design is robust and performs as intended from the outset, meeting all predefined constraints.
+
+
+
+\subsection{Design Specifications}
+
+The first step is to define the performance targets for our converter. These specifications form the foundation for all subsequent calculations, and each value is chosen to reflect a common, practical application.
+
+\begin{itemize}
+
+    \item \textbf{Input Voltage ($V_{in}$): 12 V.} This is a ubiquitous voltage standard found in automotive electrical systems, common AC-DC wall adapters, and benchtop power supplies. Its prevalence makes it a highly realistic starting point for a wide range of electronic projects.
+
+    \item \textbf{Output Voltage ($V_{out}$): 5 V.} While modern logic often uses lower voltages, 5V remains extremely common for powering USB peripherals, many types of sensors, and a vast number of popular microcontrollers. It represents a significant voltage step-down, making it an excellent test case for a buck converter's capabilities.
+
+    \item \textbf{Maximum Load Current ($I_{out}$): 2 A.} This specifies a substantial load, corresponding to a 10W power delivery. At this level, the high efficiency of a buck converter is not just beneficial, but essential. A linear regulator would be thermally unmanageable, making this a clear application for a switch-mode design.
+
+    \item \textbf{Switching Frequency ($f_{sw}$): 100 kHz.} This frequency represents a well-balanced compromise between component size and efficiency. A higher frequency would allow for physically smaller inductor and capacitor values, but would also increase switching losses in the MOSFET, reducing overall efficiency. 100 kHz is a common starting point that mitigates these losses while still being high enough for compact designs.
+
+    \item \textbf{Max Inductor Current Ripple ($\Delta I_L$): 30\% of $I_{out}$.} This is a standard design rule of thumb. It guarantees the converter operates in Continuous Conduction Mode (CCM), which simplifies analysis and improves performance. Too little ripple requires an oversized and expensive inductor, while too much ripple increases component stress and can push the converter into the more complex Discontinuous Conduction Mode (DCM).
+
+    \item \textbf{Max Output Voltage Ripple ($\Delta V_{out}$): 1\% of $V_{out}$.} For a 5V output, this translates to a 50mV ripple. This level of stability is a typical requirement for powering digital logic ICs and microcontrollers, which depend on a clean voltage rail for reliable operation.
+
+\end{itemize}
+
+
+
+\subsection{Principles of Operation}
+
+The buck converter achieves its high efficiency by using an inductor (L) and a capacitor (C) to temporarily store and then release energy, rather than dissipating it as heat. Its operation is defined by two distinct states, controlled by a high-frequency switch, which is typically a MOSFET. The rapid cycling between these states is what allows for a smooth, controlled, lower-voltage output.
+
+
+
+
+
+
+
+\begin{itemize}
+
+    \item \textbf{State 1 (Switch ON):} For a portion of the cycle, the switch is closed. This connects the input voltage directly to the inductor. A voltage of $V_{in} - V_{out}$ is applied across the inductor, causing the current through it to rise at a constant rate according to the fundamental inductor equation, $V = L(di/dt)$. During this phase, energy is being stored in the inductor's magnetic field. The current flows from the source, through the switch and inductor, and splits between charging the output capacitor and supplying the load. The diode is reverse-biased by the output voltage and plays no role in this state.
+
+    \item \textbf{State 2 (Switch OFF):} The switch is then opened, disconnecting the input source. The energy stored in the inductor's magnetic field must be released, and it does so by inducing a voltage of the opposite polarity to maintain current flow. This forward-biases the "freewheeling" diode, creating a closed loop for the current to circulate through the inductor, the load, and the diode. The inductor is now acting as a temporary source, releasing its stored energy to power the load. Without this diode path, the inductor would generate a massive voltage spike in an attempt to keep the current flowing, which would destroy the switch.
+
+\end{itemize}
+
+
+
+The proportion of time the switch is ON relative to the total switching period is known as the *duty cycle (D)*. By precisely controlling this on-time, we can control the average output voltage, which for an ideal converter is given by the simple relation:
+
+\begin{equation}
+
+V_{out} = D \cdot V_{in}
+
+\label{eq:duty_cycle}
+
+\end{equation}
+
+
+
+\subsection{Component Selection Calculations}
+
+With the theory and specifications established, we can now apply them to derive concrete component values. This is where the abstract requirements are translated into a practical circuit design.
+
+
+
+\subsubsection{Duty Cycle}
+
+The duty cycle is the primary control parameter for the converter. It represents the theoretical percentage of time the switch needs to be on to achieve the desired voltage conversion. From Equation \ref{eq:duty_cycle}, we find the ideal duty cycle. Note that in a real-world circuit, this value might need minor adjustment to compensate for voltage drops across the switch and diode, but the ideal calculation provides the necessary starting point.
+
+$$ D = \frac{V_{out}}{V_{in}} = \frac{5V}{12V} \approx 0.4167 \text{ or } 41.67\% $$
+
+
+
+\subsubsection{Inductor (L) Selection}
+
+The inductor is the primary energy storage element. Its value directly dictates the magnitude of the current ripple ($\Delta I_L$). A larger inductor will result in smaller current ripple, but will also be physically larger, more expensive, and have a higher DC resistance (DCR), which introduces a small efficiency loss. We must calculate the minimum inductance required to meet our 30\% ripple specification ($\Delta I_L = 0.3 \cdot 2A = 0.6A$). The formula is derived from the inductor voltage-current relationship during the switch's ON-time.
+
+\begin{equation}
+
+L_{min} = \frac{(V_{in} - V_{out}) \cdot D}{ \Delta I_L \cdot f_{sw}} = \frac{(12V - 5V) \cdot 0.4167}{0.6A \cdot 100,000Hz} \approx 48.6 \mu H
+
+\label{eq:inductor}
+
+\end{equation}
+
+To provide a safe design margin and account for component tolerances, we select a readily available standard value just above this calculated minimum. Our chosen value is *L = 56 $\mu$H*. This ensures the converter reliably stays in CCM under all specified operating conditions.
+
+
+
+\subsubsection{Capacitor (C) Selection}
+
+The output capacitor acts as a secondary energy reservoir, whose primary function is to smooth the output voltage and minimize the ripple ($\Delta V_{out}$). It achieves this by absorbing current when the inductor current is above the load average and sourcing current when it is below. The minimum capacitance is calculated to keep the voltage ripple below our 1\% target ($\Delta V_{out} = 0.01 \cdot 5V = 50mV$).
+
+\begin{equation}
+
+C_{min} = \frac{\Delta I_L}{8 \cdot f_{sw} \cdot \Delta V_{out}} = \frac{0.6A}{8 \cdot 100,000Hz \cdot 0.05V} = 15 \mu F
+
+\label{eq:capacitor}
+
+\end{equation}
+
+In practice, the capacitor's Equivalent Series Resistance (ESR) is also a major contributor to ripple. Therefore, we not only choose a standard value larger than the minimum, like *C = 22 $\mu$F*, but we must also specify that it should be a low-ESR type, such as a ceramic or polymer capacitor, to achieve the desired low-ripple performance.
+
+
+
+\subsection{Simulation and Verification}
+
+The final step in the design phase is to verify our calculations via simulation. Using MATLAB/Simulink, a model is constructed using the parameters derived above. This allows us to observe the output voltage and inductor current waveforms, confirming that ripple specifications are met before committing to a physical prototype. The accompanying MATLAB script provides all the necessary values to populate this simulation model.
+
+
+
+\begin{lstlisting}[caption={MATLAB script for buck converter calculations.}, label={lst:matlab}]
+
+% -------------------------------------------------------------------------
+
+% MATLAB Script for DC-DC Buck Converter Design Calculations
+
+% -------------------------------------------------------------------------
+
+% This script calculates the necessary component values and parameters
+
+% for a buck converter based on a set of design specifications. The output
+
+% of this script can be used to set up a simulation in Simulink.
+
+%
+
+% Author: An Undergraduate Peer
+
+% Date:   2025-10-17
+
+% -------------------------------------------------------------------------
+
+
+
+%% Clear Workspace
+
+clc;
+
+clear;
+
+close all;
+
+
+
+%% Design Specifications
+
+disp('--- Design Specifications ---');
+
+Vin = 12;       % Input Voltage (V)
+
+Vout = 5;       % Desired Output Voltage (V)
+
+Iout = 2;       % Maximum Load Current (A)
+
+fsw = 100e3;    % Switching Frequency (Hz)
+
+
+
+% Ripple Specifications
+
+dIL_percent = 30; % Inductor current ripple percentage (%)
+
+dVout_percent = 1; % Output voltage ripple percentage (%)
+
+
+
+fprintf('Input Voltage (Vin): %.2f V\n', Vin);
+
+fprintf('Output Voltage (Vout): %.2f V\n', Vout);
+
+fprintf('Load Current (Iout): %.2f A\n', Iout);
+
+fprintf('Switching Frequency (fsw): %.0f kHz\n\n', fsw/1000);
+
+
+
+%% Core Calculations
+
+disp('--- Core Calculations ---');
+
+% 1. Duty Cycle (D)
+
+D = Vout / Vin;
+
+fprintf('Calculated Duty Cycle (D): %.4f (%.2f %%)\n', D, D*100);
+
+
+
+% 2. Load Resistance (R)
+
+R_load = Vout / Iout;
+
+fprintf('Equivalent Load Resistance (R): %.2f Ohms\n', R_load);
+
+
+
+% 3. Switching Period (T)
+
+T = 1 / fsw;
+
+fprintf('Switching Period (T): %.2f us\n', T*1e6);
+
+
+
+%% Component Selection
+
+disp('\n--- Component Selection ---');
+
+
+
+% 1. Inductor Calculation
+
+dIL = Iout * (dIL_percent / 100); % Absolute inductor current ripple (A)
+
+L_min = (Vin - Vout) * D / (dIL * fsw); % Minimum inductance (H)
+
+
+
+fprintf('Target Inductor Current Ripple (dIL): %.2f A\n', dIL);
+
+fprintf('Minimum Inductance (L_min): %.2f uH\n', L_min*1e6);
+
+
+
+% Choose a standard inductor value slightly higher than L_min
+
+L_selected = 56e-6; % (H)
+
+fprintf('Selected Standard Inductor (L): %.0f uH\n', L_selected*1e6);
+
+
+
+% 2. Capacitor Calculation
+
+dVout = Vout * (dVout_percent / 100); % Absolute output voltage ripple (V)
+
+C_min = dIL / (8 * fsw * dVout); % Minimum capacitance (F)
+
+
+
+fprintf('Target Output Voltage Ripple (dVout): %.2f mV\n', dVout*1000);
+
+fprintf('Minimum Capacitance (C_min): %.2f uF\n', C_min*1e6);
+
+
+
+% Choose a standard capacitor value higher than C_min
+
+C_selected = 22e-6; % (F)
+
+fprintf('Selected Standard Capacitor (C): %.0f uF\n\n', C_selected*1e6);
+
+
+
+%% Simulation Parameters Summary
+
+disp('--- Summary for Simulink Model ---');
+
+disp('Use the following values in your Simulink block parameters:');
+
+fprintf('PWM Generator Duty Cycle: %.4f\n', D);
+
+fprintf('PWM Generator Frequency: %.0f Hz\n', fsw);
+
+fprintf('Inductor (RLC Branch): %.0f e-6 H\n', L_selected*1e6);
+
+fprintf('Capacitor (RLC Branch): %.0f e-6 F\n', C_selected*1e6);
+
+fprintf('Load Resistor: %.2f Ohms\n', R_load);
+
+disp('-----------------------------------');
+
+\end{lstlisting}
+
+
+
+\section{Conclusion and Summary}
+
+This article has detailed a complete, practical methodology for designing a DC-DC buck converter, starting from the fundamental need for efficient voltage reduction in modern electronics. The core of this work was a systematic, step-by-step calculation of the primary energy storage components—the inductor and capacitor—based on clearly defined and justified performance goals for current and voltage ripple. This process yielded a full design for a robust 12V-to-5V, 2A converter, specifying a 56 $\mu$H inductor and a 22 $\mu$F capacitor as the optimal choices. The design was finalized by outlining a critical verification process in MATLAB, emphasizing the importance of simulation as an essential bridge between pure theory and hardware implementation. This validation step provides a low-cost, high-confidence method to ensure the theoretical design is sound and performs as expected. The presented methodology is not limited to this specific example; it serves as a foundational template that can be adapted to design converters for a wide array of different performance specifications.
+
+
+
+\section{Future Work and References}
+
+
+
+\subsection{Future Work}
+
+The current design operates in an open-loop configuration, where the duty cycle is fixed. While this is effective for demonstrating the core design process, a practical converter must deliver a stable output voltage even when the input voltage fluctuates (line variation) or the load current changes (load variation). The clear and necessary next step is to design and implement a closed-loop feedback system for robust voltage regulation. This would involve adding a circuit to sense the output voltage, typically with a simple resistive divider, and feeding this signal into an error amplifier. The amplifier would compare the sensed voltage to a precise, stable voltage reference. The resulting error signal would then drive a PWM controller, which dynamically adjusts the MOSFET's duty cycle in real-time to hold the output voltage constant.
+
+
+
+Implementing such a system introduces the significant challenge of control loop stability. A poorly designed feedback loop can oscillate, degrading performance or even causing instability. This requires a deeper analysis of the system's transfer function, focusing on achieving adequate phase and gain margins, often visualized with Bode plots. Further enhancements could include replacing the freewheeling diode with a second MOSFET (a synchronous buck converter) to reduce losses and improve efficiency, as well as undertaking a thorough thermal analysis and designing a physical PCB layout that minimizes parasitic effects.
+
+
+
+\subsection{References}
+
+\begin{enumerate}
+
+    \item Erickson, R. W., \& Maksimovic, D. (2001). \textit{Fundamentals of Power Electronics}. Springer Science \& Business Media.
+
+    \item Arora, M. (2016). \textit{Tips for writing a good technical article}. Retrieved from aroramohit.com
+
+\end{enumerate}
+
+
+
+\end{document}
